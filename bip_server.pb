@@ -1,11 +1,13 @@
 ﻿OpenConsole("Bip - Chat - Server.")
 IncludeFile "bip_data_handler.pb"
+IncludeFile "Custom_networkmod.pb"
 
 UseModule datahandler
 
 Opendatafile(1,"database.db")
 BuildBaseFromFile(1,"onetime.BUILD")
 
+UnuseModule datahandler
 Input()
 
 ; AddInsDestVal("Users","Name","noisycat05")
@@ -46,16 +48,18 @@ Input()
 ; Next
 ; Input()
 
+UseModule net
 
+StartServer(1151)
 
-
-
+Input()
 
 
 
 
 
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 9
-; FirstLine = 2
+; CursorPosition = 54
+; FirstLine = 20
+; EnableThread
 ; EnableXP
