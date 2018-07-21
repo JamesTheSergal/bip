@@ -1,10 +1,14 @@
 ﻿DeclareModule datahandler
   Declare Opendatafile(numb.i,path$)
   Declare addtable(database,Name$)
-  Declare selectableAllS(numb.i, Table$, List RetrivedData.s(),Column.i)
+  Declare selectableAllSingle(numb.i, Table$, List RetrivedData.s(),Column.i)
   Declare Selectfrom(numb.i, List collumn.s(), table$, List output.s())
   Declare CreateCollumnQueue(toadd$, List Queue.s())
   Declare Tableform(Name$,Type,notnull,PK,AI,Unique)
+  Declare BuildBaseFromFile(Database,filename$)
+  Declare Insertdata(numb.i,Table$)
+  Declare AddInsDestVal(Table$,collumn$,Value$)
+  Declare SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s())
   Structure def
     type.i
     notnull.i
@@ -13,7 +17,14 @@
     Unique.i
   EndStructure
   
+  Structure ins
+    collumn.s
+    value.s
+  EndStructure
+  
+  
   Global NewMap collumns.def()
+  Global NewMap Insert.ins()
   UseSQLiteDatabase()
   
 EndDeclareModule
@@ -131,9 +142,44 @@ Debug DatabaseUpdate(database,Str$)
   Debug str$
   EndProcedure
   
+  Procedure BuildBaseFromFile(Database,filename$)
+    If ReadFile(1,filename$)
+      OpenFile(1,filename$)
+      While Not Eof(1)
+        fromfile$ = ReadString(1)
+        comm$ = StringField(fromfile$,1," ")
+        Select comm$
+          Case "NewDB"
+            nmb = Val(StringField(fromfile$,2," "))
+            Name$ = StringField(fromfile$,3," ")
+            Opendatafile(nmb,Name$)
+          Case "CollumnAdd"
+            Name$ = StringField(fromfile$,2," ")
+            Type = Val(StringField(fromfile$,3," "))
+            notnull = Val(StringField(fromfile$,4," "))
+            PK = Val(StringField(fromfile$,5," "))
+            AI = Val(StringField(fromfile$,6," "))
+            Tableform(Name$,Type,notnull,PK,AI,Unique)
+          Case "InsTable"
+            nmb = Val(StringField(fromfile$,2," "))
+            Name$ = StringField(fromfile$,3," ")
+            addtable(nmb,Name$)
+          Default
+            MessageRequester("Invalid Build File.","Error - Build file contains invalid command: "+comm$,#PB_MessageRequester_Error)
+            End
+        EndSelect  
+      Wend
+    Else
+      Debug "Could not open specified buildfile."
+      End
+    EndIf
+    
+    
+  EndProcedure
+  
   ;- select stuff
   
-  Procedure selectableAllS(numb.i, Table$, List RetrivedData.s(),Column.i)
+  Procedure selectableAllSingle(numb.i, Table$, List RetrivedData.s(),Column.i)
     If DatabaseQuery(numb.i,"SELECT * FROM "+Table$+";")
       While NextDatabaseRow(numb.i)
         Gotfrom$ = GetDatabaseString(numb.i,Column.i)
@@ -141,7 +187,7 @@ Debug DatabaseUpdate(database,Str$)
         RetrivedData.s() = Gotfrom$
       Wend
     Else
-      Debug "Database Query Error. >L:20"
+      Debug "Database Query Error."
     EndIf
   EndProcedure
   
@@ -151,9 +197,11 @@ Debug DatabaseUpdate(database,Str$)
     If size = -1
       Debug "Error, List had no elements."
     Else
-    While NextElement(collumn())
-      colname$ = collumn()
-      If ListIndex(collumn()) = size
+      While NextElement(collumn())
+        current+1
+        colname$ = collumn()
+        Debug Str(current)+" - "+Str(size)
+      If current = size
         CollumnList$ = CollumnList$+colname$
       Else
         CollumnList$ = CollumnList$+colname$+", "
@@ -161,7 +209,7 @@ Debug DatabaseUpdate(database,Str$)
       Debug CollumnList$
     Wend
     
-    Debug "Select "+CollumnList$+" FROM "+Table$+";"
+    Debug "SELECT "+CollumnList$+" FROM "+Table$+";"
     
       If DatabaseQuery(numb.i,"SELECT "+CollumnList$+" FROM "+Table$+";")
       While NextDatabaseRow(numb.i)
@@ -170,7 +218,7 @@ Debug DatabaseUpdate(database,Str$)
         output.s() = Gotfrom$
       Wend
     Else
-      Debug "Database Query Error. >L:20"
+      Debug "Database Query Error."
     EndIf
   EndIf
   
@@ -179,6 +227,18 @@ Debug DatabaseUpdate(database,Str$)
   Procedure CreateCollumnQueue(toadd$, List Queue.s())
     AddElement(Queue())
     Queue() = toadd$
+  EndProcedure
+  
+  Procedure SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s())
+    If DatabaseQuery(numb.i,"SELECT * FROM "+Table$+Chr(10)+"WHERE "+Column$+"='"+Value$+"';")
+      While NextDatabaseRow(numb.i)
+        Gotfrom$ = GetDatabaseString(numb.i,Column.i)
+        AddElement(RetrivedData.s())
+        RetrivedData.s() = Gotfrom$
+      Wend
+    Else
+      Debug "Database Query Error."
+    EndIf
   EndProcedure
   
   ;- table making stuff
@@ -197,12 +257,46 @@ Debug DatabaseUpdate(database,Str$)
     EndIf
   EndProcedure
   
+  ;- data inserting stuff
+  
+  Procedure Insertdata(numb.i,Table$)
+    Push$ = "INSERT INTO "+Table$+" ("
+    If FindMapElement(Insert(),Table$)
+      columndata$ = Insert() \collumn
+      valuedata$ = Insert() \value
+    Else
+      Debug "table was not found for reading in mapped memory."
+      End
+    EndIf
+    Push$ = Push$+columndata$+")"+Chr(10)+"VALUES ("+valuedata$+");"
+    Debug Push$
+    Debug DatabaseUpdate(numb.i,Push$)
+    ClearMap(Insert())
+  EndProcedure
+  
+  Procedure AddInsDestVal(Table$,collumn$,Value$)
+    ResetMap(Insert())
+    If FindMapElement(Insert(),Table$)
+      foundcollumn$ = Insert() \collumn
+      foundValue$ = Insert() \value
+      collumn$ = foundcollumn$+", "+collumn$
+      Value$ = foundValue$+", "+"'"+value$+"'"
+    Else
+      AddMapElement(Insert(),Table$)
+      Value$ = "'"+value$+"'"
+    EndIf
+    Insert() \collumn = collumn$
+    Insert() \value = Value$
+  EndProcedure
+  
+
+  
   
 EndModule
 
   
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 72
-; FirstLine = 56
-; Folding = -+
+; CursorPosition = 10
+; FirstLine = 3
+; Folding = DA-
 ; EnableXP
