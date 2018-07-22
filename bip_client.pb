@@ -1,16 +1,15 @@
 ﻿OpenConsole()
+IncludeFile "Custom_networkmod.pb"
+UseModule net
 
 
-InitNetwork()
-String$ = "hello."
-server = OpenNetworkConnection("192.168.0.9",5858)
-Delay(1000)
-go:
-SendNetworkString(server,String$,#PB_Unicode)
-string$ = Input()
-Goto go
+
+StartClient(1,"192.168.0.9",5858)
+Input()
+Debug ClientSendDataWait(1,"ping")
+Input()
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 4
+; CursorPosition = 7
 ; EnableThread
 ; EnableXP
 ; Executable = tester.exe

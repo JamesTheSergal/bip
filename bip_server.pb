@@ -50,7 +50,7 @@ Input()
 
 UseModule net
 
-StartServer(1151)
+StartServer(5858)
 
 Input()
 
@@ -59,7 +59,8 @@ Input()
 
 
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 54
-; FirstLine = 20
+; CursorPosition = 52
+; FirstLine = 22
 ; EnableThread
 ; EnableXP
+; Executable = ServerTest.exe
