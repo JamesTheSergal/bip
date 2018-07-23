@@ -5,6 +5,9 @@
   Global NewList serverIDs.i()
   Global mapaccess = CreateMutex()
   Global mapmemlis = CreateMutex()
+  Global memthread = CreateMutex()
+  Global NewMap Threads.i()
+  Global NewMap Memlist.i()
   
   ;- Client Globals
   Declare.i StartClient(ClientAgent,Address$,port)
@@ -35,19 +38,23 @@ Module net
   Declare serverthread(port)
   Declare ServerIndividualThread(ClientID)
   Declare ClientThread(ClientAgent)
+  Declare ServerSend(ClientID,retco$,message$)
+  Declare.s ServerExtractData(FormedMessage$)
   ;Declare ClientSendData(ClientAgent,String$)
   InitNetwork()
   
   ;- Server
   
   Procedure.i StartServer(port)
-    CreateThread(@serverthread(),port)
-    ;serverthread(port)
+    ;CreateThread(@serverthread(),port)
+    serverthread(port)
   EndProcedure
   
   Procedure serverthread(port)
-    Global NewMap Threads.i()
-    Global NewMap Memlist.i()
+;     Structure lz
+;     address.i
+;     status.i
+;     EndStructure
     Debug "Server Started"
     ServerID = Random(9999,0)
     Debug ServerID
@@ -59,7 +66,6 @@ Module net
       
       If ServerEvent
         ClientID = EventClient()
-        Debug ServerEvent
         Select ServerEvent
             
           Case #PB_NetworkEvent_Connect
@@ -84,15 +90,26 @@ Module net
             ReceiveNetworkData(ClientID,*ReceiveBuffer,65536)
             LockMutex(mapmemlis)
             AddMapElement(Memlist(),Str(ClientID))
-            Memlist() = *ReceiveBuffer
+            Memlist(Str(ClientID)) = *ReceiveBuffer
             UnlockMutex(mapmemlis)
-            *ReceiveBuffer = AllocateMemory(65536)
             
             
         EndSelect
       Else
         Delay(1)
       EndIf
+      
+;       ; thread memory check.
+;       LockMutex(mapmemlis)
+;       ResetMap(Memlist)
+;       While NextMapElement(Memlist())
+;         If Memlist() \status = 1
+;           Debug "Freeing memory: "+Memlist()
+;           FreeMemory(Memlist())
+;         EndIf
+;       Wend
+;       UnlockMutex(mapmemlis)
+;       ;
 
     ForEver
 
@@ -100,32 +117,95 @@ Module net
   
   Procedure ServerIndividualThread(ClientID)
     Debug "Individual thread started."
+    NewList ToBeFree.i()
+    
+    
     Repeat  
-      If FindMapElement(Memlist(),Str(ClientID))
-        LockMutex(mapmemlis)
-        memory = Memlist()
-        DeleteMapElement(Memlist(),Str(ClientID))
-        UnlockMutex(mapmemlis)
+      Delay(5)
+      If FindMapElement(Memlist(),Str(ClientID)) 
+        ;LockMutex(mapmemlis)
+        ResetMap(MemList())
+        FindMapElement(Memlist(),Str(ClientID)) 
+        memory = Memlist(Str(ClientID))
         received$ = PeekS(memory)
+        FreeMemory(memory)
+        DeleteMapElement(Memlist(),Str(ClientID))
         message$ = StringField(received$,2,"<sep-ret*message>")
         retco$ = StringField(received$,1,"<sep-ret*message>")
-        
-      FreeMemory(memory)
-    EndIf
+    
     ;- custom commands section
     
-    
+   If message$ <> "" 
     Select message$
       Case "ping"
         Debug "Sent a ping response."
-        SendNetworkString(ClientID,retco$+"<sep-ret*message>"+"pong",#PB_Unicode)
+        serversend(ClientID,retco$,"pong")
         
+      Case "status"
+        Debug "Gathering Information..."
+        LockMutex(mapaccess)
+        Clients = MapSize(Threads())
+        UnlockMutex(mapaccess)
+        LockMutex(mapmemlis)
+        act = MapSize(Memlist())
+        UnlockMutex(mapmemlis)
+        send$ = "There are "+Str(Clients)+" Active Client(s) and "+Str(act)+" pending jobs"
+        serversend(ClientID,retco$,send$) 
+        
+      Default
+        Command$ = StringField(message$,1,"(")
     EndSelect
-    
+  EndIf
+  
+  If command$ <> ""
+    Select Command$
+      Case "Login"
+        
+        Param$ = StringField(message$,2,"(")
+        Param$ = StringField(Param$,1,")")
+        If Param$ <> ""
+          
+        Else
+          Debug "Login Data invalid."
+        EndIf
+        
+      Case "CreateUser"
+        Param$ = ServerExtractData(message$)
+        User$ = StringField(Param$,1,",")
+        Password$ = StringField(Param$,2,",")
+        Debug "User: "+User$+" Password: "+Password$
+        Serversend(ClientID,retco$,"User: "+User$+" Password: "+Password$)
+    EndSelect
+  EndIf
+  
     ;- end of custom commands section
     message$ = ""
-      Delay(5)
+    Command$ = ""
+
+  EndIf
+   fail:
+      Delay(1)
+
     Until exit = 1
+  EndProcedure
+  
+  Procedure ServerSend(ClientID,retco$,message$)
+    SendNetworkString(ClientID,retco$+"<sep-ret*message>"+message$,#PB_Unicode)
+  EndProcedure
+  
+  Procedure.s ServerExtractData(FormedMessage$)
+;     Actual$ = StringField(FormedMessage$,2,"(")
+;     actlen = Len(actual$)
+;     Actual$ = Left(Actual$,actlen-1)
+    
+    count = Len(FormedMessage$)
+    open = FindString(FormedMessage$,"(")
+    extract = count-open
+    Semi$ = Right(FormedMessage$,extract)
+    Actual$ = Left(Semi$,extract-1)
+    
+    
+    ProcedureReturn Actual$
   EndProcedure
   
   ;- Client
@@ -198,8 +278,8 @@ Module net
             Case #PB_NetworkEvent_Data
               Debug "Client has received data."
               *ReceiveBuffer = AllocateMemory(65536)
-              Debug PeekS(*ReceiveBuffer,65536,#PB_Unicode)
-              Debug ReceiveNetworkData(ConnectionID,*ReceiveBuffer,65536)
+              PeekS(*ReceiveBuffer,65536,#PB_Unicode)
+              ReceiveNetworkData(ConnectionID,*ReceiveBuffer,65536)
               Received$ =  PeekS(*ReceiveBuffer)
               FreeMemory(*ReceiveBuffer)
               
@@ -264,7 +344,7 @@ Module net
       EndIf
     Next
     UnlockMutex(Inmutex)
-    Delay(100)
+    Delay(12)
     If message$ = ""
       Goto retry
     EndIf
@@ -276,7 +356,8 @@ Module net
 EndModule 
 
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 268
-; FirstLine = 234
-; Folding = 8-
+; CursorPosition = 204
+; FirstLine = 113
+; Folding = Tx
 ; EnableXP
+; Executable = ServerTest.exe

@@ -5,11 +5,13 @@ UseModule net
 
 
 StartClient(1,"192.168.0.9",5858)
+redo:
 Input()
-Debug ClientSendDataWait(1,"ping")
+PrintN(ClientSendDataWait(1,"CreateUser((this boi)noisycat05,PasswordExample)"))
+Goto redo
 Input()
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 7
+; CursorPosition = 9
 ; EnableThread
 ; EnableXP
-; Executable = tester.exe
+; Executable = status.exe

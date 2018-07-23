@@ -59,8 +59,10 @@ Input()
 
 
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 52
+; CursorPosition = 59
 ; FirstLine = 22
 ; EnableThread
 ; EnableXP
 ; Executable = ServerTest.exe
+; Warnings = Display
+; EnablePurifier = 1,1,1,1
