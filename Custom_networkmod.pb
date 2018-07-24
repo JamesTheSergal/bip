@@ -118,7 +118,7 @@ Module net
   Procedure ServerIndividualThread(ClientID)
     Debug "Individual thread started."
     NewList ToBeFree.i()
-    
+    NewList 
     
     Repeat  
       Delay(5)
@@ -171,10 +171,11 @@ Module net
         
       Case "CreateUser"
         Param$ = ServerExtractData(message$)
-        User$ = StringField(Param$,1,",")
-        Password$ = StringField(Param$,2,",")
-        Debug "User: "+User$+" Password: "+Password$
-        Serversend(ClientID,retco$,"User: "+User$+" Password: "+Password$)
+        User$ = StringField(Param$,1,"|||")
+        Password$ = StringField(Param$,2,"|||")
+        datahandler::AddInsDestVal("Users","Name",User$)
+        datahandler::AddInsDestVal("Users","Password",Password$)
+        datahandler::Insertdata(1,"Users")
     EndSelect
   EndIf
   
@@ -207,6 +208,7 @@ Module net
     
     ProcedureReturn Actual$
   EndProcedure
+  
   
   ;- Client
   
@@ -356,8 +358,8 @@ Module net
 EndModule 
 
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 204
-; FirstLine = 113
-; Folding = Tx
+; CursorPosition = 120
+; FirstLine = 55
+; Folding = Tw
 ; EnableXP
 ; Executable = ServerTest.exe

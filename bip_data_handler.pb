@@ -289,6 +289,7 @@ Debug DatabaseUpdate(database,Str$)
     Insert() \value = Value$
   EndProcedure
   
+  Procedure 
 
   
   
@@ -296,7 +297,7 @@ EndModule
 
   
 ; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 10
-; FirstLine = 3
-; Folding = DA-
+; CursorPosition = 291
+; FirstLine = 30
+; Folding = DE-
 ; EnableXP
