@@ -8,7 +8,7 @@
   Declare BuildBaseFromFile(Database,filename$)
   Declare Insertdata(numb.i,Table$)
   Declare AddInsDestVal(Table$,collumn$,Value$)
-  Declare SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s())
+  Declare SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s(),Column.i)
   Structure def
     type.i
     notnull.i
@@ -229,7 +229,7 @@ Debug DatabaseUpdate(database,Str$)
     Queue() = toadd$
   EndProcedure
   
-  Procedure SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s())
+  Procedure SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s(),Column.i)
     If DatabaseQuery(numb.i,"SELECT * FROM "+Table$+Chr(10)+"WHERE "+Column$+"='"+Value$+"';")
       While NextDatabaseRow(numb.i)
         Gotfrom$ = GetDatabaseString(numb.i,Column.i)
@@ -289,15 +289,12 @@ Debug DatabaseUpdate(database,Str$)
     Insert() \value = Value$
   EndProcedure
   
-  Procedure 
 
-  
   
 EndModule
 
   
-; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 291
-; FirstLine = 30
+; IDE Options = PureBasic 5.61 (Windows - x64)
+; CursorPosition = 10
 ; Folding = DE-
 ; EnableXP
