@@ -3,9 +3,11 @@
   ;Declare.i StartClient(serveraddress$,port)
   ;- Server Globals
   Global NewList serverIDs.i()
+  Global servername$ = "wow-interesting.com (East)"
   Global mapaccess = CreateMutex()
   Global mapmemlis = CreateMutex()
   Global memthread = CreateMutex()
+  Global sql = CreateMutex()
   Global NewMap Threads.i()
   Global NewMap Memlist.i()
   
@@ -118,7 +120,7 @@ Module net
   Procedure ServerIndividualThread(ClientID)
     Debug "Individual thread started."
     NewList ToBeFree.i()
-    NewList 
+    NewList listoutput.s()
     
     Repeat  
       Delay(5)
@@ -137,11 +139,11 @@ Module net
     
    If message$ <> "" 
     Select message$
-      Case "ping"
+      Case "(ping)"
         Debug "Sent a ping response."
         serversend(ClientID,retco$,"pong")
         
-      Case "status"
+      Case "(status)"
         Debug "Gathering Information..."
         LockMutex(mapaccess)
         Clients = MapSize(Threads())
@@ -152,6 +154,10 @@ Module net
         send$ = "There are "+Str(Clients)+" Active Client(s) and "+Str(act)+" pending jobs"
         serversend(ClientID,retco$,send$) 
         
+      Case "(name)"
+        Debug "sent client server name."
+        serversend(ClientID,retco$,servername$)
+        
       Default
         Command$ = StringField(message$,1,"(")
     EndSelect
@@ -159,29 +165,52 @@ Module net
   
   If command$ <> ""
     Select Command$
-      Case "Login"
-        
-        Param$ = StringField(message$,2,"(")
-        Param$ = StringField(Param$,1,")")
-        If Param$ <> ""
-          
-        Else
-          Debug "Login Data invalid."
-        EndIf
         
       Case "CreateUser"
         Param$ = ServerExtractData(message$)
         User$ = StringField(Param$,1,"|||")
         Password$ = StringField(Param$,2,"|||")
+        datahandler::SelectSingleWhere(1,"Users","Name",User$,listoutput.s(),0)
+        If ListSize(listoutput()) > 0
+          Debug listoutput()
+          ServerSend(ClientID,retco$,"(exists)")
+        Else
+          LockMutex(sql)
         datahandler::AddInsDestVal("Users","Name",User$)
         datahandler::AddInsDestVal("Users","Password",Password$)
+        datahandler::AddInsDestVal("Users","MessageCount","0")
         datahandler::Insertdata(1,"Users")
+        UnlockMutex(sql)
+        ServerSend(ClientID,retco$,"(created)")
+      EndIf
+      
+    Case "login"
+        Param$ = ServerExtractData(message$)
+        User$ = StringField(Param$,1,"|||")
+        Password$ = StringField(Param$,2,"|||")
+        
+        datahandler::SelectSingleWhere(1,"Users","Name",User$,listoutput.s(),3)
+        If ListSize(listoutput()) > 0
+          databasepass$ = listoutput()
+          Debug Password$
+          Debug databasepass$
+          If databasepass$ = Password$
+            ServerSend(ClientID,retco$,"(success|||"+Str(ClientID)+")")
+            ThreadUser$ = User$
+          Else
+            ServerSend(ClientID,retco$,"(passerr)")
+          EndIf
+        Else
+          ServerSend(ClientID,retco$,"(notexist)")
+        EndIf
+        
     EndSelect
   EndIf
   
     ;- end of custom commands section
     message$ = ""
     Command$ = ""
+    ClearList(listoutput())
 
   EndIf
    fail:
@@ -235,6 +264,7 @@ Module net
         ;ClientThread(ClientAgent)
     Clients() \ThreadID = Thread
     UnlockMutex(ClientlizMutx)
+    ProcedureReturn Thread
   EndIf
   
   EndProcedure
@@ -348,18 +378,24 @@ Module net
     UnlockMutex(Inmutex)
     Delay(12)
     If message$ = ""
+      counter+1
+      If counter = 1000
+        Goto fail
+      EndIf
       Goto retry
     EndIf
       ProcedureReturn Message$  
-    
+      fail:
+      ProcedureReturn "fail"
+      
   EndProcedure
   
   
 EndModule 
 
-; IDE Options = PureBasic 5.62 (Windows - x64)
-; CursorPosition = 120
-; FirstLine = 55
-; Folding = Tw
+; IDE Options = PureBasic 5.61 (Windows - x64)
+; CursorPosition = 263
+; FirstLine = 165
+; Folding = zz
 ; EnableXP
 ; Executable = ServerTest.exe
