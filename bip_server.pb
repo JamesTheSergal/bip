@@ -5,12 +5,27 @@ IncludeFile "Custom_networkmod.pb"
 
 
 UseModule datahandler
+UseModule net
 
-Opendatafile(1,"database.db")
-BuildBaseFromFile(1,"onetime.BUILD")
+If Opendatafile(1,"database.db")
+  PrintN("Opened database file successfully.")
+Else
+  BuildBaseFromFile(1,"onetime.BUILD")
+  PrintN("Created database file.")
+EndIf
 
+If FileSize("servername.nm") > 1
+  OpenFile(50,"servername.nm")
+  Global servername$ = ReadString(50)
+Else
+  PrintN("Please enter a server name:")
+  Global servername$ = Input()
+  OpenFile(50,"servername.nm")
+  WriteString(50,servername$)
+EndIf
+CloseFile(50)
 UnuseModule datahandler
-Input()
+
 
 ; AddInsDestVal("Users","Name","noisycat05")
 ; AddInsDestVal("Users","MessageCount","0")
@@ -50,10 +65,11 @@ Input()
 ; Next
 ; Input()
 
-UseModule net
+
 
 StartServer(5858)
 
+PrintN("Server thread has closed.")
 Input()
 
 
@@ -61,7 +77,7 @@ Input()
 
 
 ; IDE Options = PureBasic 5.61 (Windows - x64)
-; CursorPosition = 4
+; CursorPosition = 71
 ; EnableThread
 ; EnableXP
 ; Executable = ServerTest.exe
