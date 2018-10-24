@@ -69,7 +69,7 @@ UnuseModule datahandler
 
 StartServer(5858)
 
-PrintN("Server thread has closed.")
+PrintN("Server main thread has closed.")
 Input()
 
 
@@ -78,6 +78,7 @@ Input()
 
 ; IDE Options = PureBasic 5.61 (Windows - x64)
 ; CursorPosition = 71
+; FirstLine = 32
 ; EnableThread
 ; EnableXP
 ; Executable = ServerTest.exe

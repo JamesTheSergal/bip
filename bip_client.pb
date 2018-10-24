@@ -6,7 +6,12 @@ Declare.s ServerExtractData(FormedMessage$)
 Declare.i Login(UserName$,Password$)
 Declare.i serverping()
 Declare.s serverstats()
+Declare.i windowElement(int, string$)
+Declare.i retWelement(string$)
+Declare.i readserverlist()
+Declare ScanServer()
 UseModule net
+Global NewMap windowElements()
 
 ;- enumerations
 
@@ -33,16 +38,8 @@ EndEnumeration
 
 
 openwindow_0(0,0,600,400)
-If ReadFile(1,"serverlist.list")
-  OpenFile(1,"serverlist.list")
-  While Not Eof(1)
-    server$ = ReadString(1)
-  Wend
-Else
-  OpenFile(1,"serverlist.list")
-  CloseFile(1)
-EndIf
 
+readserverlist()
 
 
 
@@ -54,7 +51,33 @@ Repeat
     
     Select EventGadget()
         Case 3 ; add server button.
-        IP$ = GetGadgetText(1) ;IP gadget 
+        ScanServer()
+        
+             
+    EndSelect
+    
+  EndIf
+Until Event = #PB_Event_CloseWindow Or Connect$ <> ""
+
+
+
+
+
+
+
+
+
+;-- window stuff
+
+
+
+
+
+
+;-- server client stuff
+
+Procedure ScanServer()
+IP$ = GetGadgetText(1) ;IP gadget 
         URL$ = GetGadgetText(2) ;URL manual
         
         If IP$ <> "" Or URL$ <> ""
@@ -78,9 +101,10 @@ Repeat
                 mill = ElapsedMilliseconds()
                 serverping()
                 emill = ElapsedMilliseconds()
+                Latcalc = emill-mill+Latcalc
                 x+1
                 Until x = 8
-                latency = emill-mill
+                latency = Latcalc/8
                 x = 0
                 
                 SetGadgetText(6,"Adding Server to list...")
@@ -107,31 +131,27 @@ Repeat
             MessageRequester("Error","Could not connect to the server you requested. Better use discord Instead.")
           EndIf
         EndIf
-        
-             
-    EndSelect
-    
-  EndIf
-Until Event = #PB_Event_CloseWindow Or Connect$ <> ""
 
+EndProcedure
 
+;-- system stuff
 
+Procedure.i readserverlist()
+  If ReadFile(1,"serverlist.list")
+  OpenFile(1,"serverlist.list")
+  While Not Eof(1)
+    server$ = ReadString(1)
+  Wend
+Else
+  OpenFile(1,"serverlist.list")
+  CloseFile(1)
+EndIf
+EndProcedure
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+;Procedure.i writetoSlist()
+  
+  
+;EndProcedure
 
 
 
@@ -218,9 +238,9 @@ Procedure.s ServerExtractData(FormedMessage$)
   
   
 ; IDE Options = PureBasic 5.61 (Windows - x64)
-; CursorPosition = 75
-; FirstLine = 53
-; Folding = g
+; CursorPosition = 153
+; FirstLine = 67
+; Folding = C+
 ; EnableThread
 ; EnableXP
 ; Executable = status.exe

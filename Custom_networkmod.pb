@@ -329,7 +329,7 @@ Module net
               MessageRequester("Server-side","Server has shutdown or disconnected.")
               exit = 1
               LockMutex(ClientlizMutx)
-              Clients(Str(ClientAgent)) \Status = 0
+              DeleteMapElement(Clients(),Str(ClientAgent))
               UnlockMutex(ClientlizMutx)
           EndSelect
         Else
@@ -394,8 +394,8 @@ Module net
 EndModule 
 
 ; IDE Options = PureBasic 5.61 (Windows - x64)
-; CursorPosition = 263
-; FirstLine = 165
-; Folding = zz
+; CursorPosition = 330
+; FirstLine = 112
+; Folding = D3
 ; EnableXP
 ; Executable = ServerTest.exe

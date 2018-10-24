@@ -9,6 +9,7 @@
   Declare Insertdata(numb.i,Table$)
   Declare AddInsDestVal(Table$,collumn$,Value$)
   Declare SelectSingleWhere(numb.i,Table$,Column$,Value$, List RetrivedData.s(),Column.i)
+  
   Structure def
     type.i
     notnull.i
@@ -295,6 +296,7 @@ EndModule
 
   
 ; IDE Options = PureBasic 5.61 (Windows - x64)
-; CursorPosition = 10
+; CursorPosition = 11
+; FirstLine = 32
 ; Folding = DE-
 ; EnableXP
